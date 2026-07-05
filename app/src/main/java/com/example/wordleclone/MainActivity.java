@@ -199,6 +199,11 @@ public class MainActivity extends Activity {
         return button;
     }
 
+    private int getIntOrZero(Map<Character, Integer> map, char key) {
+        Integer value = map.get(key);
+        return value == null ? 0 : value;
+    }
+
     private void buildKeyboard(LinearLayout root) {
         LinearLayout keyboard = new LinearLayout(this);
         keyboard.setOrientation(LinearLayout.VERTICAL);
@@ -418,7 +423,7 @@ public class MainActivity extends Activity {
             if (guessLetter == targetLetter) {
                 result[i] = 3;
             } else {
-                remaining.put(targetLetter, remaining.getOrDefault(targetLetter, 0) + 1);
+                remaining.put(targetLetter, getIntOrZero(remaining, targetLetter) + 1);
             }
         }
 
@@ -428,7 +433,7 @@ public class MainActivity extends Activity {
             }
 
             char guessLetter = guess.charAt(i);
-            int count = remaining.getOrDefault(guessLetter, 0);
+            int count = getIntOrZero(remaining, guessLetter);
             if (count > 0) {
                 result[i] = 2;
                 remaining.put(guessLetter, count - 1);
@@ -449,7 +454,7 @@ public class MainActivity extends Activity {
     }
 
     private void updateKeyboardColor(char letter, int state) {
-        int currentState = keyStates.getOrDefault(letter, 0);
+        int currentState = getIntOrZero(keyStates, letter);
         if (state <= currentState) {
             return;
         }
