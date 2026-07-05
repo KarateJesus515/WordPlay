@@ -38,6 +38,9 @@ import java.util.concurrent.Executors;
 public class MainActivity extends Activity {
     private static final int WORD_LENGTH = 5;
     private static final int MAX_ATTEMPTS = 6;
+    private static final int SCREEN_TITLE = 1;
+    private static final int SCREEN_GAME = 2;
+    private static final int SCREEN_STATS = 3;
 
     private static final int COLOR_BACKGROUND = Color.rgb(18, 18, 19);
     private static final int COLOR_PANEL = Color.rgb(26, 26, 28);
@@ -74,6 +77,7 @@ public class MainActivity extends Activity {
     private boolean gameOver;
     private boolean requestInFlight;
     private int loadToken;
+    private int currentScreen;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,8 +85,7 @@ public class MainActivity extends Activity {
         getWindow().setStatusBarColor(COLOR_BACKGROUND);
         getWindow().setNavigationBarColor(COLOR_BACKGROUND);
 
-        buildScreen();
-        startNewGame();
+        showTitleScreen();
     }
 
     @Override
@@ -91,19 +94,62 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
-    private void buildScreen() {
-        ScrollView scrollView = new ScrollView(this);
-        scrollView.setFillViewport(true);
-        scrollView.setBackgroundColor(COLOR_BACKGROUND);
+    private void showTitleScreen() {
+        currentScreen = SCREEN_TITLE;
+        gameOver = true;
+        requestInFlight = false;
+        loadToken++;
 
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setGravity(Gravity.CENTER_HORIZONTAL);
-        root.setPadding(dp(16), dp(18), dp(16), dp(16));
-        scrollView.addView(root, new ScrollView.LayoutParams(
-                ScrollView.LayoutParams.MATCH_PARENT,
-                ScrollView.LayoutParams.WRAP_CONTENT
+        ScrollView scrollView = createBaseScrollView();
+        LinearLayout root = createBaseRoot(scrollView);
+        root.setGravity(Gravity.CENTER);
+
+        TextView title = new TextView(this);
+        title.setText("WORDPLAY");
+        title.setTextColor(COLOR_TEXT);
+        title.setTextSize(42);
+        title.setTypeface(Typeface.DEFAULT_BOLD);
+        title.setGravity(Gravity.CENTER);
+        root.addView(title, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
         ));
+
+        TextView subtitle = new TextView(this);
+        subtitle.setText("Unlimited online word puzzles");
+        subtitle.setTextColor(COLOR_MUTED);
+        subtitle.setTextSize(17);
+        subtitle.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams subtitleParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        subtitleParams.topMargin = dp(8);
+        subtitleParams.bottomMargin = dp(42);
+        root.addView(subtitle, subtitleParams);
+
+        TextView newGameButton = makeMenuButton("NEW GAME");
+        newGameButton.setOnClickListener(v -> startNewGame());
+        root.addView(newGameButton, menuButtonParams());
+
+        TextView statsButton = makeMenuButton("STATS");
+        statsButton.setOnClickListener(v -> showStatsScreen());
+        root.addView(statsButton, menuButtonParams());
+
+        TextView exitButton = makeMenuButton("EXIT");
+        exitButton.setBackground(roundBackground(COLOR_ABSENT, dp(8)));
+        exitButton.setOnClickListener(v -> finish());
+        root.addView(exitButton, menuButtonParams());
+
+        setContentView(scrollView);
+    }
+
+    private void showGameScreen() {
+        currentScreen = SCREEN_GAME;
+        keyViews.clear();
+
+        ScrollView scrollView = createBaseScrollView();
+        LinearLayout root = createBaseRoot(scrollView);
 
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
@@ -121,15 +167,9 @@ public class MainActivity extends Activity {
         title.setGravity(Gravity.CENTER_VERTICAL);
         header.addView(title, new LinearLayout.LayoutParams(0, dp(48), 1f));
 
-        TextView newGameButton = makeHeaderButton("NEW");
-        newGameButton.setOnClickListener(v -> startNewGame());
-        header.addView(newGameButton, new LinearLayout.LayoutParams(dp(74), dp(42)));
-
-        TextView statsButton = makeHeaderButton("STATS");
-        statsButton.setOnClickListener(v -> showStatsDialog());
-        LinearLayout.LayoutParams statsParams = new LinearLayout.LayoutParams(dp(82), dp(42));
-        statsParams.leftMargin = dp(8);
-        header.addView(statsButton, statsParams);
+        TextView exitButton = makeHeaderButton("EXIT");
+        exitButton.setOnClickListener(v -> confirmQuitGame());
+        header.addView(exitButton, new LinearLayout.LayoutParams(dp(82), dp(42)));
 
         statusText = new TextView(this);
         statusText.setTextColor(COLOR_MUTED);
@@ -186,6 +226,25 @@ public class MainActivity extends Activity {
         setContentView(scrollView);
     }
 
+    private ScrollView createBaseScrollView() {
+        ScrollView scrollView = new ScrollView(this);
+        scrollView.setFillViewport(true);
+        scrollView.setBackgroundColor(COLOR_BACKGROUND);
+        return scrollView;
+    }
+
+    private LinearLayout createBaseRoot(ScrollView scrollView) {
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setGravity(Gravity.CENTER_HORIZONTAL);
+        root.setPadding(dp(16), dp(18), dp(16), dp(16));
+        scrollView.addView(root, new ScrollView.LayoutParams(
+                ScrollView.LayoutParams.MATCH_PARENT,
+                ScrollView.LayoutParams.WRAP_CONTENT
+        ));
+        return root;
+    }
+
     private TextView makeHeaderButton(String label) {
         TextView button = new TextView(this);
         button.setText(label);
@@ -199,9 +258,22 @@ public class MainActivity extends Activity {
         return button;
     }
 
-    private int getIntOrZero(Map<Character, Integer> map, char key) {
-        Integer value = map.get(key);
-        return value == null ? 0 : value;
+    private TextView makeMenuButton(String label) {
+        TextView button = makeHeaderButton(label);
+        button.setTextSize(18);
+        button.setBackground(roundBackground(COLOR_CORRECT, dp(8)));
+        return button;
+    }
+
+    private LinearLayout.LayoutParams menuButtonParams() {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(56)
+        );
+        params.leftMargin = dp(24);
+        params.rightMargin = dp(24);
+        params.topMargin = dp(12);
+        return params;
     }
 
     private void buildKeyboard(LinearLayout root) {
@@ -280,6 +352,7 @@ public class MainActivity extends Activity {
     }
 
     private void startNewGame() {
+        showGameScreen();
         answer = "";
         currentRow = 0;
         currentCol = 0;
@@ -320,6 +393,20 @@ public class MainActivity extends Activity {
                 );
             });
         });
+    }
+
+    private void confirmQuitGame() {
+        new AlertDialog.Builder(this)
+                .setTitle("Quit game?")
+                .setMessage("Your current puzzle will be abandoned.")
+                .setPositiveButton("Quit", (dialog, which) -> {
+                    gameOver = true;
+                    requestInFlight = false;
+                    loadToken++;
+                    showTitleScreen();
+                })
+                .setNegativeButton("Keep playing", null)
+                .show();
     }
 
     private void addLetter(char letter) {
@@ -466,6 +553,11 @@ public class MainActivity extends Activity {
         }
     }
 
+    private int getIntOrZero(Map<Character, Integer> map, char key) {
+        Integer value = map.get(key);
+        return value == null ? 0 : value;
+    }
+
     private int colorForState(int state) {
         if (state == 3) {
             return COLOR_CORRECT;
@@ -500,8 +592,8 @@ public class MainActivity extends Activity {
                 .setTitle(won ? "You won" : "Game over")
                 .setMessage(message)
                 .setPositiveButton("New game", (dialog, which) -> startNewGame())
-                .setNegativeButton("Stats", (dialog, which) -> showStatsDialog())
-                .setNeutralButton("Close", null)
+                .setNegativeButton("Stats", (dialog, which) -> showStatsScreen())
+                .setNeutralButton("Title", (dialog, which) -> showTitleScreen())
                 .show();
     }
 
@@ -526,37 +618,123 @@ public class MainActivity extends Activity {
         editor.apply();
     }
 
-    private void showStatsDialog() {
+    private void showStatsScreen() {
+        currentScreen = SCREEN_STATS;
+        gameOver = true;
+        requestInFlight = false;
+        loadToken++;
+
         SharedPreferences prefs = getSharedPreferences("wordplay_stats", MODE_PRIVATE);
         int played = prefs.getInt("played", 0);
         int wins = prefs.getInt("wins", 0);
         int winPercent = played == 0 ? 0 : Math.round((wins * 100f) / played);
 
-        StringBuilder message = new StringBuilder();
-        message.append("Played: ").append(played).append("\n");
-        message.append("Wins: ").append(wins).append("\n");
-        message.append("Win rate: ").append(winPercent).append("%\n");
-        message.append("Current streak: ").append(prefs.getInt("streak", 0)).append("\n");
-        message.append("Best streak: ").append(prefs.getInt("max_streak", 0)).append("\n\n");
-        message.append("Guess distribution\n");
+        ScrollView scrollView = createBaseScrollView();
+        LinearLayout root = createBaseRoot(scrollView);
+
+        LinearLayout header = new LinearLayout(this);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        root.addView(header, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        TextView title = new TextView(this);
+        title.setText("STATS");
+        title.setTextColor(COLOR_TEXT);
+        title.setTextSize(30);
+        title.setTypeface(Typeface.DEFAULT_BOLD);
+        title.setGravity(Gravity.CENTER_VERTICAL);
+        header.addView(title, new LinearLayout.LayoutParams(0, dp(52), 1f));
+
+        TextView backButton = makeHeaderButton("BACK");
+        backButton.setOnClickListener(v -> showTitleScreen());
+        header.addView(backButton, new LinearLayout.LayoutParams(dp(82), dp(42)));
+
+        LinearLayout statsPanel = new LinearLayout(this);
+        statsPanel.setOrientation(LinearLayout.VERTICAL);
+        statsPanel.setPadding(dp(18), dp(18), dp(18), dp(18));
+        statsPanel.setBackground(roundBackground(COLOR_PANEL, dp(8)));
+        LinearLayout.LayoutParams panelParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        panelParams.topMargin = dp(26);
+        root.addView(statsPanel, panelParams);
+
+        addStatsLine(statsPanel, "Played", String.valueOf(played));
+        addStatsLine(statsPanel, "Wins", String.valueOf(wins));
+        addStatsLine(statsPanel, "Win rate", winPercent + "%");
+        addStatsLine(statsPanel, "Current streak", String.valueOf(prefs.getInt("streak", 0)));
+        addStatsLine(statsPanel, "Best streak", String.valueOf(prefs.getInt("max_streak", 0)));
+
+        TextView distributionTitle = new TextView(this);
+        distributionTitle.setText("Guess distribution");
+        distributionTitle.setTextColor(COLOR_TEXT);
+        distributionTitle.setTextSize(18);
+        distributionTitle.setTypeface(Typeface.DEFAULT_BOLD);
+        LinearLayout.LayoutParams distributionTitleParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        distributionTitleParams.topMargin = dp(26);
+        statsPanel.addView(distributionTitle, distributionTitleParams);
+
         for (int i = 1; i <= MAX_ATTEMPTS; i++) {
-            message.append(i).append(": ").append(prefs.getInt("guess_" + i, 0)).append("\n");
+            addStatsLine(statsPanel, String.valueOf(i), String.valueOf(prefs.getInt("guess_" + i, 0)));
         }
 
+        TextView resetButton = makeMenuButton("RESET STATS");
+        resetButton.setBackground(roundBackground(COLOR_ABSENT, dp(8)));
+        resetButton.setOnClickListener(v -> confirmResetStats());
+        LinearLayout.LayoutParams resetParams = menuButtonParams();
+        resetParams.topMargin = dp(28);
+        root.addView(resetButton, resetParams);
+
+        setContentView(scrollView);
+    }
+
+    private void addStatsLine(LinearLayout parent, String label, String value) {
+        LinearLayout row = new LinearLayout(this);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(40)
+        );
+        parent.addView(row, rowParams);
+
+        TextView labelView = new TextView(this);
+        labelView.setText(label);
+        labelView.setTextColor(COLOR_MUTED);
+        labelView.setTextSize(16);
+        row.addView(labelView, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView valueView = new TextView(this);
+        valueView.setText(value);
+        valueView.setTextColor(COLOR_TEXT);
+        valueView.setTextSize(18);
+        valueView.setTypeface(Typeface.DEFAULT_BOLD);
+        valueView.setGravity(Gravity.RIGHT);
+        row.addView(valueView, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+    }
+
+    private void confirmResetStats() {
         new AlertDialog.Builder(this)
-                .setTitle("Stats")
-                .setMessage(message.toString())
-                .setPositiveButton("Close", null)
-                .setNegativeButton("Reset stats", (dialog, which) -> {
+                .setTitle("Reset stats?")
+                .setMessage("This clears wins, streaks, and guess distribution.")
+                .setPositiveButton("Reset", (dialog, which) -> {
                     getSharedPreferences("wordplay_stats", MODE_PRIVATE).edit().clear().apply();
-                    showStatsDialog();
+                    showStatsScreen();
                 })
+                .setNegativeButton("Cancel", null)
                 .show();
     }
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
-        if (requestInFlight) {
+        if (currentScreen != SCREEN_GAME || requestInFlight) {
             return true;
         }
 
@@ -579,6 +757,20 @@ public class MainActivity extends Activity {
         }
 
         return super.onKeyUp(keyCode, event);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (currentScreen == SCREEN_GAME) {
+            confirmQuitGame();
+            return;
+        }
+        if (currentScreen == SCREEN_STATS) {
+            showTitleScreen();
+            return;
+        }
+
+        super.onBackPressed();
     }
 
     private OnlineWordResult fetchRandomAnswer() {
