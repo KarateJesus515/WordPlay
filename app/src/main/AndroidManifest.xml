@@ -4,14 +4,14 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/wordplay_icons"
-        android:label="WordPlay"
-        android:roundIcon="@mipmap/wordplay_icons"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/wordplay_icons_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:screenOrientation="fullSensor">
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
