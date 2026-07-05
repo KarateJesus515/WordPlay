@@ -136,6 +136,11 @@ public class MainActivity extends Activity {
         statsButton.setOnClickListener(v -> showStatsScreen());
         root.addView(statsButton, menuButtonParams());
 
+        TextView exitButton = makeMenuButton("EXIT");
+        exitButton.setBackground(roundBackground(COLOR_ABSENT, dp(8)));
+        exitButton.setOnClickListener(v -> finish());
+        root.addView(exitButton, menuButtonParams());
+
         setContentView(scrollView);
     }
 
