@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace "com.example.wordleclone"
+    namespace "com.wordplay.wordplay"
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.example.wordleclone"
+        applicationId "com.wordplay.wordplay"
         minSdk 23
         targetSdk 35
         versionCode 1
