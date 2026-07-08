@@ -4,7 +4,7 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "com.wordplay.wordplay",
+  "applicationId": "com.example.wordleclone",
   "variantName": "release",
   "elements": [
     {

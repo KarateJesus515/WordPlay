@@ -1,4 +1,4 @@
-package com.wordplay.wordplay;
+package com.example.wordleclone;
 
 import android.animation.ObjectAnimator;
 import android.app.Activity;
@@ -116,7 +116,7 @@ public class MainActivity extends Activity {
         ));
 
         TextView subtitle = new TextView(this);
-        subtitle.setText("Unlimited Online Word Puzzles");
+        subtitle.setText("Unlimited online word puzzles");
         subtitle.setTextColor(COLOR_MUTED);
         subtitle.setTextSize(17);
         subtitle.setGravity(Gravity.CENTER);
@@ -167,15 +167,15 @@ public class MainActivity extends Activity {
         title.setGravity(Gravity.CENTER_VERTICAL);
         header.addView(title, new LinearLayout.LayoutParams(0, dp(48), 1f));
 
-        TextView giveUpButton = makeHeaderButton("GIVE UP");
-        giveUpButton.setOnClickListener(v -> showGiveUpDialog());
-        header.addView(giveUpButton, new LinearLayout.LayoutParams(dp(96), dp(42)));
+        TextView exitButton = makeHeaderButton("EXIT");
+        exitButton.setOnClickListener(v -> confirmQuitGame());
+        header.addView(exitButton, new LinearLayout.LayoutParams(dp(82), dp(42)));
 
         statusText = new TextView(this);
         statusText.setTextColor(COLOR_MUTED);
         statusText.setTextSize(15);
         statusText.setGravity(Gravity.CENTER);
-        statusText.setText("Guess the Hidden 5-letter word.");
+        statusText.setText("Guess the hidden 5-letter word.");
         LinearLayout.LayoutParams statusParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 dp(44)
@@ -360,7 +360,7 @@ public class MainActivity extends Activity {
         requestInFlight = true;
         keyStates.clear();
         int token = ++loadToken;
-        statusText.setText("Loading an Online Word...");
+        statusText.setText("Loading an online word...");
         statusText.setTextColor(COLOR_MUTED);
 
         for (int row = 0; row < MAX_ATTEMPTS; row++) {
@@ -387,8 +387,8 @@ public class MainActivity extends Activity {
                 validWordCache.add(answer);
                 showStatus(
                         result.fromOnline
-                                ? "Word Chosen. Start guessing."
-                                : "Offline. Check your connection.",
+                                ? "Online word ready. Start guessing."
+                                : "Using a backup word. Check your connection.",
                         result.fromOnline
                 );
             });
@@ -397,28 +397,15 @@ public class MainActivity extends Activity {
 
     private void confirmQuitGame() {
         new AlertDialog.Builder(this)
-                .setTitle("Quit Game?")
-                .setMessage("Your Current Puzzle Will Be Abandoned.")
+                .setTitle("Quit game?")
+                .setMessage("Your current puzzle will be abandoned.")
                 .setPositiveButton("Quit", (dialog, which) -> {
                     gameOver = true;
                     requestInFlight = false;
                     loadToken++;
                     showTitleScreen();
                 })
-                .setNegativeButton("Keep Playing", null)
-                .show();
-    }
-
-    private void showGiveUpDialog() {
-        gameOver = true;
-        saveGameResult(false, 0);
-        new AlertDialog.Builder(this)
-                .setTitle("Gave Up")
-                .setMessage("The Word You Were Trying To Guess Was: " + answer)
-                .setPositiveButton("New Game", (dialog, which) -> startNewGame())
-                .setNegativeButton("Stats", (dialog, which) -> showStatsScreen())
-                .setNeutralButton("Exit", (dialog, which) -> showTitleScreen())
-                .setCancelable(false)
+                .setNegativeButton("Keep playing", null)
                 .show();
     }
 
@@ -451,7 +438,7 @@ public class MainActivity extends Activity {
         }
 
         if (currentCol < WORD_LENGTH) {
-            showStatus("Not Enough Letters.", false);
+            showStatus("Not enough letters.", false);
             shakeCurrentRow();
             return;
         }
@@ -459,7 +446,7 @@ public class MainActivity extends Activity {
         String guess = readCurrentGuess();
         int token = loadToken;
         requestInFlight = true;
-        showStatus("Checking " + guess + " Online...", true);
+        showStatus("Checking " + guess + " online...", true);
 
         networkExecutor.execute(() -> {
             boolean valid = isValidWordOnline(guess);
@@ -470,7 +457,7 @@ public class MainActivity extends Activity {
 
                 requestInFlight = false;
                 if (!valid) {
-                    showStatus("Not Found in the Online Dictionary. Try Again", false);
+                    showStatus("Not found in the online dictionary.", false);
                     shakeCurrentRow();
                     return;
                 }
@@ -487,7 +474,7 @@ public class MainActivity extends Activity {
         if (guess.equals(answer)) {
             gameOver = true;
             saveGameResult(true, currentRow + 1);
-            showStatus("You Got It In " + (currentRow + 1) + "!", true);
+            showStatus("You got it in " + (currentRow + 1) + "!", true);
             showGameOverDialog(true);
             return;
         }
@@ -498,10 +485,10 @@ public class MainActivity extends Activity {
         if (currentRow == MAX_ATTEMPTS) {
             gameOver = true;
             saveGameResult(false, 0);
-            showStatus("The Word Was " + answer + ".", false);
+            showStatus("The word was " + answer + ".", false);
             showGameOverDialog(false);
         } else {
-            showStatus("Try Another Word.", true);
+            showStatus("Try another word.", true);
         }
     }
 
@@ -598,13 +585,13 @@ public class MainActivity extends Activity {
 
     private void showGameOverDialog(boolean won) {
         String message = won
-                ? "Nice Work. The Word Was " + answer + "."
-                : "Good Try. The Word Was " + answer + ".";
+                ? "Nice work. The word was " + answer + "."
+                : "Good try. The word was " + answer + ".";
 
         new AlertDialog.Builder(this)
                 .setTitle(won ? "You won" : "Game over")
                 .setMessage(message)
-                .setPositiveButton("New Game", (dialog, which) -> startNewGame())
+                .setPositiveButton("New game", (dialog, which) -> startNewGame())
                 .setNegativeButton("Stats", (dialog, which) -> showStatsScreen())
                 .setNeutralButton("Title", (dialog, which) -> showTitleScreen())
                 .show();
